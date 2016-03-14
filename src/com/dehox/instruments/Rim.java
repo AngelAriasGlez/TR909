@@ -5,13 +5,13 @@
  */
 package com.dehox.instruments;
 
-public class Kick extends Instrument{
-
-    public Kick(){
-        //loadFromAssets("assets/bass_drum.wav");
-        loadFromAssets("assets/VEDH_Kick.wav");
+/**
+ *
+ * @author Angel
+ */
+public class Rim extends Instrument{
+        public Rim(){
+            loadFromAssets("assets/rim_shot.wav");
     
-
-    }
-
+        }
 }

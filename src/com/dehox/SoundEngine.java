@@ -5,16 +5,15 @@
  */
 package com.dehox;
 
-import com.dehox.NeetJavaSound.NjsCallback;
 import com.dehox.instruments.Instrument;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Queue;
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
-import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineListener;
 
 
 /**
@@ -23,38 +22,44 @@ import javax.sound.sampled.SourceDataLine;
  */
 public class SoundEngine extends Thread {
     
-    private float mStepTimeMs = 1000f/(120f/60f) / 4f;
-    private long mPreviusTime;
+    public interface Event{
+        public void stepChange(int step);
+    }
+    Event mListener;
+    public void setListener(Event listener){
+        mListener = listener;
+    }
     
-    private int mStep;
-    private SourceDataLine mSoundLine;
     
+    private float mStepTimeMs = (60f / 126f * 1000f) / 4f;
+    
+    private long mStartTime;
+    private int mTotalSteps;
+    private int mPreviusStep;    
     
     final Queue<float[]> mAudioQueue = new ArrayDeque();
     
     public SoundEngine(){
-
+        this.setPriority(Thread.MAX_PRIORITY);
     }
     
     @Override
     public void run() {
+        
+        mStartTime = System.currentTimeMillis();
         while(true){
             long ctime = System.currentTimeMillis();
-            if(ctime - mPreviusTime > mStepTimeMs){
-                //System.out.println("Beat");
+            mTotalSteps = (int)Math.floor((ctime - mStartTime) / mStepTimeMs);
+
+            if(mTotalSteps > mPreviusStep){
+                int cStep = mTotalSteps % 16;
                 
-                mPreviusTime = ctime;
-                
-                mStep++;
-                if(mStep > 15){
-                    mStep = 0;
+                if(mListener != null){
+                    mListener.stepChange(cStep);
                 }
-                for(Button b:TR909.PadButtons){
-                    b.setActive(false);
-                }
-                TR909.PadButtons[mStep].setActive(true);
                 
-                ArrayList<Instrument> ins = TR909.InstrumentRack.getInStepInstruments(mStep);
+                                
+                ArrayList<Instrument> ins = TR909.InstrumentRack.getInStepInstruments(cStep);
 
                 for(Instrument i : ins){
 
@@ -62,6 +67,12 @@ public class SoundEngine extends Thread {
                     try {
                        Clip clip = AudioSystem.getClip();
                        final AudioFormat audioFormat = new AudioFormat(44100, 16, 1, true, false);
+                       clip.addLineListener(new LineListener() {
+                            public void update(LineEvent myLineEvent) {
+                                if (myLineEvent.getType() == LineEvent.Type.STOP)
+                                    clip.close();
+                                }
+                        });
                        clip.open(audioFormat, audio, 0, audio.length);
                        clip.start(); 
                     } catch (Exception e) {
@@ -70,6 +81,7 @@ public class SoundEngine extends Thread {
 
                 }
                 
+                mPreviusStep = mTotalSteps;
 
             }
             

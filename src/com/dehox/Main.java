@@ -5,7 +5,10 @@
  */
 package com.dehox;
 
-import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontFormatException;
+import java.awt.GraphicsEnvironment;
+import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,6 +31,14 @@ public class Main extends javax.swing.JFrame {
         setSize(trPanel.getWidth(), trPanel.getHeight());
         setResizable(false);
         this.setTitle("TR909 Emulator");
+        
+        
+        try {
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            ge.registerFont(Font.createFont(Font.TRUETYPE_FONT, this.getClass().getResourceAsStream("/assets/digital-7.monoitalic.ttf")));
+        } catch (IOException|FontFormatException e) {
+            System.out.println("Can't load font");
+        }
 
     }
 

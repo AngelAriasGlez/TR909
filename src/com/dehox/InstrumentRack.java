@@ -39,15 +39,6 @@ public class InstrumentRack {
         mRack[10] = new Ride();
     }
     
-    public void set(int pos, boolean active){
-        if(mActiveInstrument < 0) return;
-        mRack[mActiveInstrument].set(pos, active);
-    }
-    public boolean get(int pos){
-        if(mActiveInstrument < 0) return false;
-        return mRack[mActiveInstrument].get(pos);
-    }
-    
     public void setActiveInstrument(int ins){
         mActiveInstrument = ins;
     }
@@ -58,13 +49,18 @@ public class InstrumentRack {
         return mRack.length;
     }
     
-    public ArrayList<Instrument> getInStepInstruments(int step){
-        ArrayList<Instrument> out = new ArrayList<>();
+    public Instrument getInstrument(int ins){
+        return mRack[ins];
+    }
+
+    
+    public void play(int ins){
+        mRack[ins].play();
+    }
+    
+    public void read(float[] output, int frames){
         for(Instrument i : mRack){
-            if(i.isInStep(step)){
-                out.add(i);
-            }
+            i.read(output, frames);
         }
-        return out;
     }
 }

@@ -5,6 +5,8 @@
  */
 package com.dehox;
 
+
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -12,13 +14,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.LineUnavailableException;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
@@ -29,11 +25,11 @@ import javax.swing.SwingConstants;
  */
 public class TR909 extends JPanel {
     private final BufferedImage bg;
-    
+
+    public static Button[] PatternButtons = new Button[4];
     public static Button[] PadButtons = new Button[16];
-    public static InstrumentRack InstrumentRack = new InstrumentRack();
-    
-    private Clip mClip;
+    public static InstrumentRack Instruments = new InstrumentRack();
+    public static PatternRack Patterns = new PatternRack(Instruments);
 
     TR909() throws IOException{
         
@@ -45,6 +41,13 @@ public class TR909 extends JPanel {
         setSize(bg.getWidth(), bg.getHeight());
         
         
+        
+
+        
+        
+        
+        
+        
         int buttonsInitOffsetX = 210;
         int buttonsInitOffsetY = 638;
         int buttonsStepX = 68;  
@@ -53,16 +56,67 @@ public class TR909 extends JPanel {
             PadButtons[i] = new Button(""+i);
             add(PadButtons[i]);
             PadButtons[i].setBounds(buttonsInitOffsetX + (buttonsStepX * i), buttonsInitOffsetY, 50, 50);
-            PadButtons[i].setListener(new Button.Event(){
+            final int k = i;
+            PadButtons[i].addMouseListener(new MouseListener(){
                 @Override
-                public void pressed(Button btn, boolean active) {
-                    TR909.InstrumentRack.set(Integer.parseInt(btn.getName()), active);
+                public void mouseClicked(MouseEvent e) {}
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    padPressedEvent(k);
                 }
-
+                @Override
+                public void mouseReleased(MouseEvent e) {}
+                @Override
+                public void mouseEntered(MouseEvent e) {}
+                @Override
+                public void mouseExited(MouseEvent e) {}
             });
 
         }
-        /*Button b = new Button("20");
+        
+
+        SoundEngine se = new SoundEngine();
+        se.start();
+        se.setListener(new SoundEngine.Event(){
+            @Override
+            public void stepChange(int step) {
+                for(Button b:TR909.PadButtons){
+                    b.setActive(false);
+                }
+                TR909.PadButtons[step].setActive(true);
+                
+                
+                /*if(step == 0 && mClip[0] != null && !mClip[0].isRunning()){
+                    try {
+                      AudioInputStream inputStream = AudioSystem.getAudioInputStream(
+                        Main.class.getResourceAsStream("/assets/VEDH_Mel1_124.wav"));
+                      mClip[0].open(inputStream);
+                      mClip[0].loop(Clip.LOOP_CONTINUOUSLY);
+                      mClip[0].start(); 
+                    } catch (Exception e) {
+                      System.err.println(e.getMessage());
+                    }        
+                }
+
+                if(step == 0 && mClip[1] != null && !mClip[1].isRunning()){
+                    try {
+                      AudioInputStream inputStream = AudioSystem.getAudioInputStream(
+                        Main.class.getResourceAsStream("/assets/SHAL_Vocal1_124.wav"));
+                      mClip[1].open(inputStream);
+                      mClip[1].loop(Clip.LOOP_CONTINUOUSLY);
+                      mClip[1].start(); 
+                    } catch (Exception e) {
+                      System.err.println(e.getMessage());
+                    }        
+                }              */  
+                
+                
+            }
+        });
+
+        
+        
+                /*Button b = new Button("20");
         b.setBounds(100, 100, 50, 50);
         add(b);
         b.setListener(new Button.Event(){
@@ -78,43 +132,297 @@ public class TR909 extends JPanel {
             }
         
         });*/
-        
-        
-        try {
-            mClip = AudioSystem.getClip();
-        } catch (LineUnavailableException ex) {
-            Logger.getLogger(TR909.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        SoundEngine se = new SoundEngine();
-        se.setListener(new SoundEngine.Event(){
+                
+                
+        DigitalPanel bpmPanel = new DigitalPanel();
+        bpmPanel.setBounds(282, 445, 113, 50);
+        add(bpmPanel);
+                
+        Knob tempo = new Knob();
+        tempo.setBounds(434, 432, 80, 80);
+        tempo.setListener(new Knob.Event(){
             @Override
-            public void stepChange(int step) {
-                for(Button b:TR909.PadButtons){
-                    b.setActive(false);
-                }
-                TR909.PadButtons[step].setActive(true);
-                
-                
-                if(step == 0 && mClip != null && !mClip.isRunning()){
-                    try {
-                      AudioInputStream inputStream = AudioSystem.getAudioInputStream(
-                        Main.class.getResourceAsStream("/assets/VEDH_Mel2_126.wav"));
-                      mClip.open(inputStream);
-                      mClip.loop(Clip.LOOP_CONTINUOUSLY);
-                      mClip.start(); 
-                    } catch (Exception e) {
-                      System.err.println(e.getMessage());
-                    }        
-                }
+            public void progress(int progress) {
+                int bpm = 60 + (int)(80.0f / 100.0f * (float)progress);
+                bpmPanel.setText(String.valueOf(bpm));
+                se.setBpm(bpm);
+            }
+
+            @Override
+            public void progressOnRelease(int progress) {
+             
             }
         });
-        se.start();
+        tempo.setProgress(80);
+        add(tempo);
+        
+
+        Knob bassDrumVol = new Knob();
+        bassDrumVol.setBounds(286, 273, 42, 42);
+        bassDrumVol.setListener(new Knob.Event(){
+            @Override
+            public void progress(int progress) {
+                Instruments.getInstrument(0).setVolume(1.0f / 100.0f * (float)progress);
+            }
+
+            @Override
+            public void progressOnRelease(int progress) {
+             
+            }
+        });
+        bassDrumVol.setProgress(80);
+        add(bassDrumVol);
+        
+        
+        Knob bassDrumDecay = new Knob();
+        bassDrumDecay.setBounds(286, 333, 42, 42);
+        bassDrumDecay.setListener(new Knob.Event(){
+            @Override
+            public void progress(int progress) {
+                Instruments.getInstrument(0).setDecay(1.0f / 100.0f * (float)progress);
+            }
+
+            @Override
+            public void progressOnRelease(int progress) {
+             
+            }
+        });
+        bassDrumDecay.setProgress(100);
+        add(bassDrumDecay);
+        
+        Knob bassDrumAttack = new Knob();
+        bassDrumAttack.setBounds(223, 333, 42, 42);
+        bassDrumAttack.setListener(new Knob.Event(){
+            @Override
+            public void progress(int progress) {
+                Instruments.getInstrument(0).setAttack(1.0f / 100.0f * (float)progress);
+            }
+
+            @Override
+            public void progressOnRelease(int progress) {
+             
+            }
+        });
+        bassDrumAttack.setProgress(100);
+        add(bassDrumAttack);
+        
+        
+        Knob bassDrumTone = new Knob();
+        bassDrumTone.setBounds(223, 273, 42, 42);
+        bassDrumTone.setListener(new Knob.Event(){
+            @Override
+            public void progress(int progress) {
+
+            }
+
+            @Override
+            public void progressOnRelease(int progress) {
+                 Instruments.getInstrument(0).setTone(1.0f / 100.0f * (float)progress);            
+            }
+        });
+        bassDrumTone.setProgress(100);
+        add(bassDrumTone);
+
+        
+        
+        
+        Knob snareDrumVol = new Knob();
+        snareDrumVol.setBounds(423, 273, 42, 42);
+        snareDrumVol.setListener(new Knob.Event(){
+            @Override
+            public void progress(int progress) {
+                Instruments.getInstrument(1).setVolume(1.0f / 100.0f * (float)progress);
+            }
+
+            @Override
+            public void progressOnRelease(int progress) {
+             
+            }
+        });
+        snareDrumVol.setProgress(80);
+        add(snareDrumVol);
+        
+        
+        
+                
+        Knob snareDrumTone = new Knob();
+        snareDrumTone.setBounds(360, 273, 42, 42);
+        snareDrumTone.setListener(new Knob.Event(){
+            @Override
+            public void progress(int progress) {
+
+            }
+
+            @Override
+            public void progressOnRelease(int progress) {
+                 Instruments.getInstrument(1).setTone(1.0f / 100.0f * (float)progress);            
+            }
+        });
+        snareDrumTone.setProgress(100);
+        add(snareDrumTone);
+
+
+        
+        
+        Button play = new Button("play");
+        play.setBounds(120, 447, 50, 50);
+        play.addMouseListener(new MouseListener(){
+            @Override
+            public void mouseClicked(MouseEvent e) {}
+            @Override
+            public void mousePressed(MouseEvent e) {
+                se.play();
+                play.setSetted(true);
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {}
+            @Override
+            public void mouseEntered(MouseEvent e) {}
+            @Override
+            public void mouseExited(MouseEvent e) {}
+        });
+        add(play);
+
+        Button stop = new Button("stop");
+        stop.setBounds(194, 447, 50, 50);
+        stop.addMouseListener(new MouseListener(){
+            @Override
+            public void mouseClicked(MouseEvent e) {}
+            @Override
+            public void mousePressed(MouseEvent e) {
+                se.pause();
+                play.setSetted(false);
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {}
+            @Override
+            public void mouseEntered(MouseEvent e) {}
+            @Override
+            public void mouseExited(MouseEvent e) {}
+        });
+        add(stop);
+        
+        
+        
+        
+        
+        Knob volume = new Knob();
+        volume.setBounds(1213, 432, 80, 80);
+        volume.setListener(new Knob.Event(){
+            @Override
+            public void progress(int progress) {
+                se.setVolume(1.0f / 100.0f * (float)progress);
+            }
+
+            @Override
+            public void progressOnRelease(int progress) {
+             
+            }
+        });
+        volume.setProgress(80);
+        add(volume);
+        
+        
+        
+        
+        
+        PatternButtons[0] = new Button("p0");
+        PatternButtons[0].setBounds(718, 440, 30, 30);
+        PatternButtons[0].addMouseListener(new MouseListener(){
+            @Override
+            public void mouseClicked(MouseEvent e) {}
+            @Override
+            public void mousePressed(MouseEvent e) {
+                setPattern(0);
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {}
+            @Override
+            public void mouseEntered(MouseEvent e) {}
+            @Override
+            public void mouseExited(MouseEvent e) {}
+        });
+        add(PatternButtons[0]);
+        
+        PatternButtons[1] = new Button("p1");
+        PatternButtons[1].setBounds(754, 440, 30, 30);
+        PatternButtons[1].addMouseListener(new MouseListener(){
+            @Override
+            public void mouseClicked(MouseEvent e) {}
+            @Override
+            public void mousePressed(MouseEvent e) {
+                setPattern(1);
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {}
+            @Override
+            public void mouseEntered(MouseEvent e) {}
+            @Override
+            public void mouseExited(MouseEvent e) {}
+        });
+        add(PatternButtons[1]);   
+        
+        PatternButtons[2] = new Button("p2");
+        PatternButtons[2].setBounds(790, 440, 30, 30);
+        PatternButtons[2].addMouseListener(new MouseListener(){
+            @Override
+            public void mouseClicked(MouseEvent e) {}
+            @Override
+            public void mousePressed(MouseEvent e) {
+                setPattern(2);
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {}
+            @Override
+            public void mouseEntered(MouseEvent e) {}
+            @Override
+            public void mouseExited(MouseEvent e) {}
+        });
+        add(PatternButtons[2]);  
+        
+        PatternButtons[3] = new Button("p2");
+        PatternButtons[3].setBounds(825, 440, 30, 30);
+        PatternButtons[3].addMouseListener(new MouseListener(){
+            @Override
+            public void mouseClicked(MouseEvent e) {}
+            @Override
+            public void mousePressed(MouseEvent e) {
+                setPattern(3);
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {}
+            @Override
+            public void mouseEntered(MouseEvent e) {}
+            @Override
+            public void mouseExited(MouseEvent e) {}
+        });
+        add(PatternButtons[3]);     
+        
+        
+        
+       
+        
+        
         
         
         createInstrumentLabels();
+        setInstrument(-1);
+        setPattern(0);
     }
     
+    public void setPattern(int pat){
+            Patterns.setActive(pat);
+            updatePatternButtons();
+            updatePad();
+    }
+    public void updatePatternButtons(){
+        for(int k=0;k<PatternButtons.length;k++){
+            PatternButtons[k].setSetted(TR909.Patterns.getActiveIndex() == k);
+        }
+    }
+    
+ 
+   
     @Override
     protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -123,17 +431,27 @@ public class TR909 extends JPanel {
             //repaint();
             
     }
+    public void padPressedEvent(int n){
+        int activeIns = Instruments.getActiveInstrument();
+        if(activeIns == -1){
+            TR909.Instruments.play(n);
+        }else{
+            TR909.Patterns.getActive().setPad(activeIns, n, !TR909.Patterns.getActive().getPad(activeIns, n));
+        }
+        updatePad();
+    }
+
     public void updatePad(){
         for(int k=0;k<PadButtons.length;k++){
-            PadButtons[k].setSetted(TR909.InstrumentRack.get(k));
+            PadButtons[k].setSetted(TR909.Patterns.getActive().getPad(Instruments.getActiveInstrument(), k));
         }
     }
     
     
     
     public void setInstrument(int instrument){
-        if(InstrumentRack.getActiveInstrument() == instrument) instrument = -1;
-        InstrumentRack.setActiveInstrument(instrument);
+        if(Instruments.getActiveInstrument() == instrument) instrument = -1;
+        Instruments.setActiveInstrument(instrument);
         updateInstrumentLabels(instrument);
         updatePad();
     }
@@ -204,7 +522,6 @@ public class TR909 extends JPanel {
             
             add(l);
         }
-        updateInstrumentLabels(-1);
     }
     
     public void updateInstrumentLabels(int selectedInstrument){

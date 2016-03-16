@@ -17,29 +17,13 @@ import javax.swing.JLabel;
  *
  * @author Angel
  */
-public class Button extends JLabel implements MouseListener,MouseMotionListener{
+public class Button extends JLabel implements MouseListener{
 
-    @Override
-    public void mouseDragged(MouseEvent e) {
-        System.out.println("drag");
-    }
 
-    @Override
-    public void mouseMoved(MouseEvent e) {
-        //System.out.println("move");
-    }
-    //private static BufferedImage mIdleImage;
-    public interface Event{
-        void pressed(Button btn, boolean active);
-    }
-    private Event mListener;
-    public void setListener(Event listener){
-        mListener = listener;
-    }
-    
     //private String mId;
     public boolean mSetted = false;
-    public boolean mActive = false;  
+    public boolean mActive = false;
+    public boolean mPressed = false;  
     
     
     
@@ -50,7 +34,6 @@ public class Button extends JLabel implements MouseListener,MouseMotionListener{
         //if(Button.mIdleImage == null) Button.mIdleImage = ImageIO.read(cldr.getResource("com/dehox/idle_button.png"));
         //setIcon(new ImageIcon(mIdleImage));
         addMouseListener(this);
-        this.addMouseMotionListener(this);
         
         
     }
@@ -71,12 +54,13 @@ public class Button extends JLabel implements MouseListener,MouseMotionListener{
             g.setColor(Color.white);
             g.fillRect(5, 5, getWidth()-10, getHeight()-10);
             
+            
             if(mActive){
                 g.setColor(Color.CYAN);
-                g.fillRect(10, 10, 30, 30);
-            }else if(mSetted){       
+                g.fillRect(getWidth()/4, getHeight()/4, getWidth()/2, getHeight()/2);
+            }else if(mSetted  || mPressed){       
                 g.setColor(Color.MAGENTA);
-                g.fillRect(10, 10, 30, 30);
+                g.fillRect(getWidth()/4, getHeight()/4, getWidth()/2, getHeight()/2);
                 
             }
     }
@@ -88,20 +72,14 @@ public class Button extends JLabel implements MouseListener,MouseMotionListener{
 
     @Override
     public void mousePressed(MouseEvent e) {
-        System.out.println(getName());
-        mSetted = !mSetted;
-        
-        if(mListener != null){
-            mListener.pressed(this, mSetted);
-        }
-        
-       
+        mPressed = true;
         repaint();    
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        
+        mPressed = false;
+        repaint(); 
     }
 
     @Override
